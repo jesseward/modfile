@@ -156,7 +156,7 @@ type Mod struct {
 	// at the index in which it is played
 	SequenceTable    []uint8
 	numberOfPatterns uint8 // the number of (unique) patterns that make up this song
-	Format           ModuleFormat
+	Format           *ModuleFormat
 	Patterns         []*Pattern
 }
 
@@ -192,8 +192,7 @@ func Read(buffer []byte) (*Mod, error) {
 		return nil, err
 	}
 
-	pt.Name = string(buffer[offsetModuleNameStart:lengthSongName])
-	pt.Name = strings.Replace(pt.Name, "\x00", "", -1)
+	pt.Name = strings.TrimRight(string(buffer[offsetModuleNameStart:lengthSongName]), "\x00")
 
 	offset := offsetSampleMetaDataStart
 	pt.Samples = make([]*Sample, pt.Format.Samples)

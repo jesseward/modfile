@@ -21,9 +21,9 @@ func TestRead(t *testing.T) {
 	tests := []struct {
 		buffer    []byte
 		title     string
-		modFormat ModuleFormat
+		modFormat *ModuleFormat
 	}{
-		{buffer: loadBuffer("taketrip.mod"), title: "take a trip from me", modFormat: ModFormatMK},
+		{buffer: loadBuffer("taketrip.mod"), title: "take a trip from me", modFormat: &ModFormatMK},
 	}
 
 	for _, tt := range tests {
@@ -37,7 +37,7 @@ func TestRead(t *testing.T) {
 				t.Errorf("wanted title '%s, got '%s'", tt.title, module.Name)
 			}
 
-			if module.Format != tt.modFormat {
+			if *module.Format != *tt.modFormat {
 				t.Errorf("wanted format '%s', got '%s'", tt.modFormat.Name, module.Format.Name)
 			}
 

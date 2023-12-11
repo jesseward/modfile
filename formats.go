@@ -53,16 +53,15 @@ type ModuleFormat struct {
 }
 
 // Returns the version of the ProTracker file format. If the file is not recognized, a 0 is returned
-func DetectModFileFormat(buffer []byte) (ModuleFormat, error) {
-	var modFormat ModuleFormat
+func DetectModFileFormat(buffer []byte) (*ModuleFormat, error) {
+
 	if len(buffer) < int(offsetModuleFormatMagic+uint32(lengthMagicFormat)) {
-		return modFormat, fmt.Errorf("incorrect buffer size, buff is of size=%d, expected=%d", len(buffer), lengthMagicFormat)
+		return nil, fmt.Errorf("incorrect buffer size, buff is of size=%d, expected=%d", len(buffer), lengthMagicFormat)
 	}
 
-	var err error
-	var ok bool
-	if modFormat, ok = formatMap[string(buffer[offsetModuleFormatMagic:offsetModuleFormatMagic+4])]; !ok {
-		err = fmt.Errorf("unrecognized module file format, received buffer='%v'", buffer)
+	if modFormat, ok := formatMap[string(buffer[offsetModuleFormatMagic:offsetModuleFormatMagic+4])]; ok {
+		return &modFormat, nil
 	}
-	return modFormat, err
+
+	return nil, fmt.Errorf("unrecognized module file format, received buffer='%v'", buffer)
 }

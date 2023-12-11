@@ -36,7 +36,6 @@ func (m *Mod) PrintModInfo() string {
 	for i := uint8(0); i < m.Format.Samples; i++ {
 		mod.WriteString(fmt.Sprintf("%.2d %s", i, m.Samples[i].String()))
 	}
-	mod.WriteString("Pattern Data\n")
 
 	return mod.String()
 }
