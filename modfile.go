@@ -164,19 +164,6 @@ type Pattern struct {
 	rowChannel [][]*Note // row count and then channel
 }
 
-// NoteTable is the index of notes per frequency table below
-var NoteTable = [12]string{"B-", "A#", "A-", "G#", "G-", "F#", "F-", "E-", "D#", "D-", "C#", "C-"}
-
-// FrequencyTable maps  frequencies for notes/octaves
-var FrequencyTable = []int{
-	// B, A#, A, G#, G, F#, F, E, D#, D, C#, C
-	57, 60, 64, 67, 71, 76, 80, 85, 90, 95, 101, 107,
-	113, 120, 127, 135, 143, 151, 160, 170, 180, 190, 202, 214,
-	226, 240, 254, 269, 285, 302, 320, 339, 360, 381, 404, 428,
-	453, 480, 508, 538, 570, 604, 640, 678, 720, 762, 808, 856,
-	907, 961, 1017, 1077, 1141, 1209, 1281, 1357, 1440, 1525, 1616, 1712,
-}
-
 // patternSizeBytes calculates the size of the pattern for the module type. For example
 // For a four-channel file there are (4 bytes * 4 channels * 64 lines) =1024 bytes of information per pattern
 func (m *Mod) patternDataSizeBytes() uint32 {
