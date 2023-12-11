@@ -8,13 +8,15 @@ setup:
 
 .PHONY: build
 build: clean
-	go build -v -o dist/cli cmd/pt/main.go
+	@echo "==> Building Packages <=="
+	go build -v ./...
+	@echo "==> Building cli <=="
+	go build -o dist/cli cmd/pt/main.go 
 
 .PHONY: test
 test:
 	@echo "==> running Go tests <=="
 	go test -race ./...
-
 
 .PHONY: fmt
 fmt:
@@ -22,4 +24,5 @@ fmt:
 
 .PHONY: clean
 clean:
+	@echo "==> Cleaning dist/ <=="
 	rm -fr dist/*
