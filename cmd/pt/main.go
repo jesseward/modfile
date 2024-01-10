@@ -9,7 +9,7 @@ import (
 
 func exit(err error) {
 	if err != nil {
-		fmt.Println("[ERROR]:", err)
+		fmt.Fprint(os.Stderr, "[ERROR] ", err, "\n")
 		os.Exit(1)
 	}
 
@@ -19,7 +19,7 @@ func exit(err error) {
 func main() {
 
 	if len(os.Args) < 2 {
-		exit(fmt.Errorf("Usage: %s <.mod file>\n", os.Args[0]))
+		exit(fmt.Errorf("Usage: %s <.mod file>", os.Args[0]))
 	}
 
 	buffer, err := os.ReadFile(os.Args[1])
