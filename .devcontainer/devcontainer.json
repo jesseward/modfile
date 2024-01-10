@@ -1,0 +1,16 @@
+{
+    "customizations": {
+        "vscode": {
+            "extensions": [
+                "golang.Go",
+                "github.copilot"
+            ]
+        }
+    },
+    "features": {
+        "ghcr.io/devcontainers/features/sshd:1": {
+        "version": "latest"
+        }
+    },
+    "image": "mcr.microsoft.com/devcontainers/go"
+}
