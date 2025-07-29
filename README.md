@@ -1,19 +1,18 @@
-## What
+# iMPULSE Amiga Mod Music Player
 
-A reader for mod files.
+iMPULSE is a command line Amiga Mod (module) Music file player.
 
-## Background
+Module file (MOD music, tracker music) is a family of music file formats originating from the MOD file format on Amiga systems used in the late 1980s. Those who produce these files (using the software called music trackers) and listen to them form the worldwide MOD scene a part of the demoscene subculture. Protracker is a good example of such a player.
 
-The MOD music format, short for MODule, is a file format used to represent music tracks. It was originally developed for the Commodore Amiga computer system in the late 1980s. The format was widely used in the demoscene, a subculture focused on creating demos, which are non-interactive multimedia presentations.
+Module files store digitally recorded samples and several "patterns" or "pages" of music data in a form similar to that of a spreadsheet. These patterns contain note numbers, instrument numbers, and controller messages. The number of notes that can be played simultaneously depends on how many "tracks" there are per pattern. And the song is built of a pattern list, that tells in what order these patterns shall be played in the song.
 
-The MOD format is based on the concept of 'samples'. These are small snippets of sound that can be played back at different pitches to create music. A MOD file contains a set of samples and a sequence of instructions for playing them, which allows for complex music tracks to be created and played back.
+The project is written in Go.
 
-The format was revolutionary at the time because it allowed for the creation of complex, multi-channel music using relatively small amounts of data. This made it ideal for use in demos, which needed to be small enough to fit on a floppy disk.
+## Current Status
 
-The MOD format and the demoscene were closely linked, with many demo creators also creating their own music tracks. The format is still in use today, particularly in the chiptune music scene.
+* Currently supports and plays the Amiga Protracker Music Format (Mod file) via the UI and command line
 
-See
 
-* [The Mod Archive](https://modarchive.org/)
-* [Protracker](https://en.wikipedia.org/wiki/Protracker)
-* [DemoZoo](https://demozoo.org/)
+## References
+
+* XM libary in C https://github.com/Artefact2/libxm
