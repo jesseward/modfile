@@ -166,7 +166,6 @@ func (s *Sample) Panning() byte {
 	return 128 // Protracker is mono
 }
 
-
 func (s *Sample) LoopEnd() uint32 {
 	return uint32(s.loopStart + s.loopLength)
 }

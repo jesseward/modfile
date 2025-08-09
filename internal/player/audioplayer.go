@@ -130,13 +130,13 @@ func (w *WavPlayer) writeWavHeader() {
 
 	// "fmt " sub-chunk
 	w.writer.Write([]byte("fmt "))
-	binary.Write(w.writer, binary.LittleEndian, uint32(16))                                           // Sub-chunk size
-	binary.Write(w.writer, binary.LittleEndian, uint16(1))                                            // Audio format (PCM)
-	binary.Write(w.writer, binary.LittleEndian, uint16(w.opts.NumChannels))                           // Num channels
-	binary.Write(w.writer, binary.LittleEndian, uint32(w.opts.SampleRate))                            // Sample rate
+	binary.Write(w.writer, binary.LittleEndian, uint32(16))                                                   // Sub-chunk size
+	binary.Write(w.writer, binary.LittleEndian, uint16(1))                                                    // Audio format (PCM)
+	binary.Write(w.writer, binary.LittleEndian, uint16(w.opts.NumChannels))                                   // Num channels
+	binary.Write(w.writer, binary.LittleEndian, uint32(w.opts.SampleRate))                                    // Sample rate
 	binary.Write(w.writer, binary.LittleEndian, uint32(w.opts.SampleRate*w.opts.NumChannels*w.opts.BitDepth)) // Byte rate
-	binary.Write(w.writer, binary.LittleEndian, uint16(w.opts.NumChannels*w.opts.BitDepth))            // Block align
-	binary.Write(w.writer, binary.LittleEndian, uint16(w.opts.BitDepth*8))                             // Bits per sample
+	binary.Write(w.writer, binary.LittleEndian, uint16(w.opts.NumChannels*w.opts.BitDepth))                   // Block align
+	binary.Write(w.writer, binary.LittleEndian, uint16(w.opts.BitDepth*8))                                    // Bits per sample
 
 	// "data" sub-chunk
 	w.writer.Write([]byte("data"))
