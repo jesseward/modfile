@@ -542,7 +542,6 @@ func (s *Sample) Panning() byte {
 	return s.panning
 }
 
-
 func (s *Sample) LoopEnd() uint32 {
 	return s.loopStart + s.loopLength
 }
