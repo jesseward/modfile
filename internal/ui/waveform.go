@@ -21,7 +21,7 @@ func newWaveformModel(s module.Sample, w, h int) waveformModel {
 
 func (m waveformModel) View() string {
 	title := titleStyle.Render("Sample '" + m.sample.Name() + "'")
-	waveform := noteStyle.Render(m.sample.AsciiWaveform(m.width/2, m.height/2))
+	waveform := noteStyle.Render(module.AsciiWaveform(m.sample, m.width/2, m.height/2))
 
 	// Calculate the size of the dialog box (50% of screen) and add some padding
 	dialogWidth := (m.width / 2) + 6
