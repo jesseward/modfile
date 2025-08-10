@@ -5,7 +5,6 @@ import (
 	"encoding/binary"
 	"fmt"
 	"io"
-	"math"
 	"os"
 	"strings"
 
@@ -133,71 +132,6 @@ func (inst *Instrument) LoopEnd() uint32 {
 // GetData returns the raw sample data as 16-bit signed integers.
 func (inst *Instrument) Data() []int16 {
 	return inst.data
-}
-
-func (inst *Instrument) AsciiWaveform(width, height int) string {
-	if len(inst.data) == 0 || width <= 0 || height <= 0 {
-		return ""
-	}
-
-	grid := make([][]rune, height)
-	for i := range grid {
-		grid[i] = make([]rune, width)
-		for j := range grid[i] {
-			grid[i][j] = ' '
-		}
-	}
-
-	bucketSize := float64(len(inst.data)) / float64(width)
-	halfHeight := float64(height) / 2.0
-
-	for i := 0; i < width; i++ {
-		start := int(float64(i) * bucketSize)
-		end := int(float64(i+1) * bucketSize)
-		if end > len(inst.data) {
-			end = len(inst.data)
-		}
-		if start >= end {
-			continue
-		}
-
-		bucket := inst.data[start:end]
-		var minVal, maxVal int16 = 0, 0
-		for _, s := range bucket {
-			if s < minVal {
-				minVal = s
-			}
-			if s > maxVal {
-				maxVal = s
-			}
-		}
-
-		// Normalize and scale to the view height
-		yMax := int(math.Round(float64(maxVal)/32767.0*halfHeight + halfHeight))
-		yMin := int(math.Round(float64(minVal)/32767.0*halfHeight + halfHeight))
-
-		// Clamp values to be within the grid
-		if yMax >= height {
-			yMax = height - 1
-		}
-		if yMin < 0 {
-			yMin = 0
-		}
-
-		// Draw the vertical bar for the current bucket
-		for y := yMin; y <= yMax; y++ {
-			if y >= 0 && y < height {
-				grid[y][i] = '█'
-			}
-		}
-	}
-
-	var builder strings.Builder
-	for y := 0; y < height; y++ {
-		builder.WriteString(string(grid[y]))
-		builder.WriteRune('\n')
-	}
-	return builder.String()
 }
 
 var noteTable = [12]string{"C-", "C#", "D-", "D#", "E-", "F-", "F#", "G-", "G#", "A-", "A#", "B-"}
