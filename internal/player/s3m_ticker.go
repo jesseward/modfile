@@ -33,8 +33,8 @@ func (t *S3MTicker) ProcessTick(p *Player, playerState *playerState, channelStat
 	}
 	t.handleEffect(p, channelState, cell, speed, bpm, nextRow, nextOrder, currentOrder, tick, playerState)
 	if tick > 0 {
-		t.applyVibrato(channelState)
-		t.applyTremolo(channelState)
+		applyVibrato(channelState)
+		applyTremolo(channelState)
 	}
 }
 
@@ -65,8 +65,10 @@ func (t *S3MTicker) handleTickZero(p *Player, cell *module.Cell, state *channelS
 					c2spd = 8363
 				}
 				state.period = uint16(float64(period) * 8363.0 / float64(c2spd))
+				state.notePeriod = state.period
 			} else {
 				state.period = period
+				state.notePeriod = period
 			}
 		}
 	} else if cell.Note == 254 {
@@ -94,11 +96,11 @@ func (t *S3MTicker) handleEffect(p *Player, state *channelState, cell *module.Ce
 			*nextRow = int(param>>4)*10 + int(param&0x0F)
 		}
 	case 4: // Dxy: Volume slide
-		t.volumeSlide(state, param, tick)
+		applyVolumeSlide(state, param, tick, true)
 	case 5: // Exx: Portamento Down
-		t.portamentoDown(state, param, tick)
+		applyPortamentoDown(state, param, tick, true)
 	case 6: // Fxx: Portamento Up
-		t.portamentoUp(state, param, tick)
+		applyPortamentoUp(state, param, tick, true)
 	case 7: // Gxx: Tone portamento
 		t.tonePortamento(state, param)
 	case 8: // Hxy: Vibrato
@@ -106,28 +108,13 @@ func (t *S3MTicker) handleEffect(p *Player, state *channelState, cell *module.Ce
 	case 9: // Ixy: Tremor
 		t.tremor(state, param, tick)
 	case 10: // Jxy: Arpeggio
-		if tick > 0 {
-			x := param >> 4
-			y := param & 0x0F
-			var arp_note uint16
-			switch tick % 3 {
-			case 0:
-				arp_note = state.period
-			case 1:
-				arp_note = t.getPeriod(state.period, int(x))
-			case 2:
-				arp_note = t.getPeriod(state.period, int(y))
-			}
-			state.arpPeriod = arp_note
-		} else {
-			state.arpPeriod = 0
-		}
+		applyArpeggio(state, param, tick, t)
 	case 11: // Kxy: Vibrato + Volume slide
 		t.vibrato(state, 0)
-		t.volumeSlide(state, param, tick)
+		applyVolumeSlide(state, param, tick, true)
 	case 12: // Lxy: Porta + Volume slide
 		t.tonePortamento(state, 0)
-		t.volumeSlide(state, param, tick)
+		applyVolumeSlide(state, param, tick, true)
 	case 15: // Oxy: Set sample offset
 		if tick == 0 {
 			if param > 0 {
@@ -138,7 +125,7 @@ func (t *S3MTicker) handleEffect(p *Player, state *channelState, cell *module.Ce
 	case 17: // Qxy: Retrig + Volume slide
 		if tick > 0 && tick%int(param&0x0F) == 0 {
 			state.samplePos = 0
-			t.volumeSlide(state, param>>4, 0)
+			applyVolumeSlide(state, param>>4, 0, true)
 		}
 	case 18: // Rxy: Tremolo
 		t.tremolo(state, param)
@@ -159,82 +146,9 @@ func (t *S3MTicker) handleEffect(p *Player, state *channelState, cell *module.Ce
 	}
 }
 
-func (t *S3MTicker) volumeSlide(state *channelState, param byte, tick int) {
-	if param > 0 {
-		state.lastVolSlide = param
-	} else {
-		param = state.lastVolSlide
-	}
 
-	x := param >> 4
-	y := param & 0x0F
 
-	if y == 0xF && x > 0 { // Fine slide up
-		if tick == 0 {
-			state.volume += float64(x) / 64.0
-		}
-	} else if x == 0xF && y > 0 { // Fine slide down
-		if tick == 0 {
-			state.volume -= float64(y) / 64.0
-		}
-	} else if tick > 0 {
-		if x > 0 {
-			state.volume += float64(x) / 64.0
-		} else {
-			state.volume -= float64(y) / 64.0
-		}
-	}
-	if state.volume > 1.0 {
-		state.volume = 1.0
-	}
-	if state.volume < 0 {
-		state.volume = 0
-	}
-}
 
-func (t *S3MTicker) portamentoUp(state *channelState, param byte, tick int) {
-	if param > 0 {
-		state.lastPorta = param
-	} else {
-		param = state.lastPorta
-	}
-	x := param >> 4
-	y := param & 0x0F
-
-	if x == 0xE { // Extra fine
-		if tick == 0 {
-			state.period -= uint16(y)
-		}
-	} else if x == 0xF { // Fine
-		if tick == 0 {
-			state.period -= uint16(y) * 4
-		}
-	} else if tick > 0 {
-		state.period -= uint16(param) * 4
-	}
-}
-
-func (t *S3MTicker) portamentoDown(state *channelState, param byte, tick int) {
-	if param > 0 {
-		state.lastPorta = param
-	} else {
-		param = state.lastPorta
-	}
-	x := param >> 4
-	y := param & 0x0F
-
-	if x == 0xE { // Extra fine
-		if tick == 0 {
-			state.period += uint16(y)
-		}
-	} else if x == 0xF { // Fine
-		if tick == 0 {
-			state.period += uint16(y) * 4
-		}
-	} else if tick > 0 {
-		state.period += uint16(param) * 4
-	}
-}
 
 func (t *S3MTicker) tonePortamento(state *channelState, param byte) {
 	if param > 0 {
@@ -324,52 +238,9 @@ func (t *S3MTicker) specialEffect(state *channelState, param byte, nextRow *int,
 	}
 }
 
-func (t *S3MTicker) applyVibrato(state *channelState) {
-	var delta float64
-	pos := state.vibratoPos & 31
-	switch state.vibratoWave & 3 {
-	case 0: // Sine
-		delta = sin_table[pos]
-	case 1: // Ramp down
-		delta = float64(255 - pos*8)
-	case 2: // Square
-		delta = 255
-	}
-	if state.vibratoPos >= 32 {
-		delta = -delta
-	}
 
-	delta = delta * float64(state.vibratoDepth) / 128.0
-	state.period += uint16(delta)
-	state.vibratoPos = (state.vibratoPos + state.vibratoSpeed) & 63
-}
 
-func (t *S3MTicker) applyTremolo(state *channelState) {
-	var delta float64
-	pos := state.tremoloPos & 31
-	switch state.tremoloWave & 3 {
-	case 0: // Sine
-		delta = sin_table[pos]
-	case 1: // Ramp down
-		delta = float64(255 - pos*8)
-	case 2: // Square
-		delta = 255
-	}
-	if state.tremoloPos >= 32 {
-		delta = -delta
-	}
-	delta = delta * float64(state.tremoloDepth) / 64.0
-	state.volume += delta / 64.0
-	if state.volume < 0 {
-		state.volume = 0
-	}
-	if state.volume > 1.0 {
-		state.volume = 1.0
-	}
-	state.tremoloPos = (state.tremoloPos + state.tremoloSpeed) & 63
-}
-
-func (t *S3MTicker) getPeriod(period uint16, offset int) uint16 {
+func (t *S3MTicker) GetPeriod(period uint16, offset int) uint16 {
 	// this is not correct.
 	// find the note from the period
 	var note, octave int

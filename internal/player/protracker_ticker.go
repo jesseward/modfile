@@ -21,10 +21,7 @@ var periodTable = [16 * 36]uint16{
 	862, 814, 768, 725, 684, 646, 610, 575, 543, 513, 484, 457, 431, 407, 384, 363, 342, 323, 305, 288, 272, 256, 242, 228, 216, 203, 192, 181, 171, 161, 152, 144, 136, 128, 121, 114,
 }
 
-var sin_table = [32]float64{
-	0, 24, 49, 74, 97, 120, 141, 161, 180, 197, 212, 224, 235, 244, 250, 253,
-	255, 253, 250, 244, 235, 224, 212, 197, 180, 161, 141, 120, 97, 74, 49, 24,
-}
+
 
 type ProtrackerTicker struct{}
 
@@ -49,6 +46,7 @@ func (t *ProtrackerTicker) handleTickZero(p *Player, cell *module.Cell, state *c
 			state.portaTarget = cell.Period
 		} else {
 			state.period = cell.Period
+			state.notePeriod = cell.Period
 		}
 	}
 }
@@ -59,37 +57,20 @@ func (t *ProtrackerTicker) handleEffect(p *Player, state *channelState, cell *mo
 	switch effect {
 	// Arpeggio alternates between the base note and two other notes, creating a chord-like effect.
 	case 0x00: // Arpeggio
-		if val > 0 && tick > 0 {
-			arp_note := state.period
-			switch tick % 3 {
-			case 1:
-				arp_note = t.getPeriod(state.period, int(val>>4))
-			case 2:
-				arp_note = t.getPeriod(state.period, int(val&0x0F))
-			}
-			state.period = arp_note
+		if val > 0 {
+			applyArpeggio(state, val, tick, t)
 		}
 	// Porta Up slides the pitch of the note up.
 	case 0x01: // Porta Up
-		if tick > 0 {
-			if val > 0 {
-				state.lastPortaUp = val
-			}
-			state.period -= uint16(state.lastPortaUp)
-			if state.period < 113 {
-				state.period = 113
-			}
+		applyPortamentoUp(state, val, tick, false)
+		if state.period < 113 {
+			state.period = 113
 		}
 	// Porta Down slides the pitch of the note down.
 	case 0x02: // Porta Down
-		if tick > 0 {
-			if val > 0 {
-				state.lastPortaDown = val
-			}
-			state.period += uint16(state.lastPortaDown)
-			if state.period > 856 {
-				state.period = 856
-			}
+		applyPortamentoDown(state, val, tick, false)
+		if state.period > 856 {
+			state.period = 856
 		}
 	// Tone Portamento slides the pitch from the previous note to the new note.
 	case 0x03: // Tone Portamento
@@ -107,7 +88,7 @@ func (t *ProtrackerTicker) handleEffect(p *Player, state *channelState, cell *mo
 		if val&0x0F > 0 {
 			state.vibratoDepth = val & 0x0F
 		}
-		t.applyVibrato(state)
+		applyVibrato(state)
 	// Tone Portamento + Volume Slide combines a tone portamento with a volume slide.
 	case 0x05: // Tone Portamento + Volume Slide
 		t.handleEffect(p, state, &module.Cell{Effect: 0x03}, speed, bpm, nextRow, nextOrder, currentOrder, tick, playerState)
@@ -124,7 +105,7 @@ func (t *ProtrackerTicker) handleEffect(p *Player, state *channelState, cell *mo
 		if val&0x0F > 0 {
 			state.tremoloDepth = val & 0x0F
 		}
-		t.applyTremolo(state)
+		applyTremolo(state)
 	// Set Panning sets the stereo panning of the channel.
 	case 0x08: // Set Panning
 		state.panning = float64(val) / 255.0
@@ -136,21 +117,7 @@ func (t *ProtrackerTicker) handleEffect(p *Player, state *channelState, cell *mo
 		state.samplePos = float64(state.lastSampleOffset * 256)
 	// Volume Slide slides the volume up or down.
 	case 0x0A: // Volume Slide
-		if tick > 0 {
-			if val>>4 > 0 {
-				state.lastVolSlide = val >> 4
-				state.volume += float64(state.lastVolSlide) / 64.0
-			} else {
-				state.lastVolSlide = val & 0x0F
-				state.volume -= float64(state.lastVolSlide) / 64.0
-			}
-			if state.volume < 0 {
-				state.volume = 0
-			}
-			if state.volume > 1 {
-				state.volume = 1
-			}
-		}
+		applyVolumeSlide(state, val, tick, false)
 	// Position Jump jumps to a specific pattern in the order list.
 	case 0x0B: // Position Jump
 		*nextOrder = int(val)
@@ -252,57 +219,9 @@ func (t *ProtrackerTicker) handleExtendedEffect(state *channelState, command, va
 	}
 }
 
-func (t *ProtrackerTicker) applyVibrato(state *channelState) {
-	var delta float64
-	switch state.vibratoWave & 3 {
-	case 0: // Sine
-		delta = sin_table[state.vibratoPos&31]
-		if state.vibratoPos >= 32 {
-			delta = -delta
-		}
-	case 1: // Ramp down
-		delta = float64(255 - (state.vibratoPos * 8))
-	case 2: // Square
-		if state.vibratoPos < 32 {
-			delta = 255
-		} else {
-			delta = -255
-		}
-	}
-	delta = delta * float64(state.vibratoDepth) / 128.0
-	state.period += uint16(delta)
-	state.vibratoPos = (state.vibratoPos + state.vibratoSpeed) & 63
-}
 
-func (t *ProtrackerTicker) applyTremolo(state *channelState) {
-	var delta float64
-	switch state.tremoloWave & 3 {
-	case 0: // Sine
-		delta = sin_table[state.tremoloPos&31]
-		if state.tremoloPos >= 32 {
-			delta = -delta
-		}
-	case 1: // Ramp down
-		delta = float64(255 - (state.tremoloPos * 8))
-	case 2: // Square
-		if state.vibratoPos < 32 {
-			delta = 255
-		} else {
-			delta = -255
-		}
-	}
-	delta = delta * float64(state.tremoloDepth) / 64.0
-	state.volume += delta / 64.0
-	if state.volume < 0 {
-		state.volume = 0
-	}
-	if state.volume > 1.0 {
-		state.volume = 1.0
-	}
-	state.tremoloPos = (state.tremoloPos + state.tremoloSpeed) & 63
-}
 
-func (t *ProtrackerTicker) getPeriod(period uint16, offset int) uint16 {
+func (t *ProtrackerTicker) GetPeriod(period uint16, offset int) uint16 {
 	finetune := 0
 	note := 0
 	for i := range periodTable {

@@ -223,6 +223,7 @@ type channelState struct {
 	sample             module.Sample
 	sampleIndex        int
 	period             uint16
+	notePeriod         uint16
 	samplePos          float64
 	volume             float64
 	portaTarget        uint16
