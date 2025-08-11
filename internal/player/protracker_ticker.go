@@ -111,10 +111,7 @@ func (t *ProtrackerTicker) handleEffect(p *Player, state *channelState, cell *mo
 		state.panning = float64(val) / 255.0
 	// Set Sample Offset starts the sample from a specific offset.
 	case 0x09: // Set Sample Offset
-		if val > 0 {
-			state.lastSampleOffset = uint16(val)
-		}
-		state.samplePos = float64(state.lastSampleOffset * 256)
+		handleSampleOffset(state, val)
 	// Volume Slide slides the volume up or down.
 	case 0x0A: // Volume Slide
 		applyVolumeSlide(state, val, tick, false)
@@ -205,9 +202,7 @@ func (t *ProtrackerTicker) handleExtendedEffect(state *channelState, command, va
 		}
 	// Note Cut cuts the note after a specified number of ticks.
 	case 0x0C: // Note Cut
-		if tick == int(value) {
-			state.volume = 0
-		}
+		applyNoteCut(state, value, tick)
 	// Note Delay delays the start of the note by a specified number of ticks.
 	case 0x0D: // Note Delay
 		if tick < int(value) {

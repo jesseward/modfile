@@ -117,10 +117,7 @@ func (t *S3MTicker) handleEffect(p *Player, state *channelState, cell *module.Ce
 		applyVolumeSlide(state, param, tick, true)
 	case 15: // Oxy: Set sample offset
 		if tick == 0 {
-			if param > 0 {
-				state.lastSampleOffset = uint16(param)
-			}
-			state.samplePos = float64(state.lastSampleOffset * 256)
+			handleSampleOffset(state, param)
 		}
 	case 17: // Qxy: Retrig + Volume slide
 		if tick > 0 && tick%int(param&0x0F) == 0 {
@@ -222,9 +219,7 @@ func (t *S3MTicker) specialEffect(state *channelState, param byte, nextRow *int,
 			}
 		}
 	case 0xC: // SCx: Note Cut
-		if tick == int(val) {
-			state.volume = 0
-		}
+		applyNoteCut(state, val, tick)
 	case 0xD: // SDx: Note Delay
 		if tick < int(val) {
 			// requires restructuring note handling

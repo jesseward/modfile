@@ -193,3 +193,18 @@ func applyPortamentoDown(state *channelState, param byte, tick int, isS3M bool) 
 	}
 	state.period += speed
 }
+
+// applyNoteCut cuts the note after a specified number of ticks.
+func applyNoteCut(state *channelState, param byte, tick int) {
+	if tick == int(param) {
+		state.volume = 0
+	}
+}
+
+// handleSampleOffset handles the set sample offset effect.
+func handleSampleOffset(state *channelState, param byte) {
+	if param > 0 {
+		state.lastSampleOffset = uint16(param)
+	}
+	state.samplePos = float64(state.lastSampleOffset * 256)
+}
