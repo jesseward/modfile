@@ -16,3 +16,4 @@ The project is written in Go.
 ## References
 
 * XM libary in C https://github.com/Artefact2/libxm
+* Effect comparision between formats https://wiki.openmpt.org/Manual:_Effect_Reference
