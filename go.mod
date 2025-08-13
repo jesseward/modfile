@@ -8,7 +8,6 @@ require (
 	github.com/charmbracelet/lipgloss v1.1.0
 	github.com/ebitengine/oto/v3 v3.3.3
 	github.com/urfave/cli/v2 v2.27.7
-	golang.org/x/term v0.33.0
 )
 
 require (
