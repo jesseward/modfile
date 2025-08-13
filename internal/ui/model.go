@@ -67,16 +67,23 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 
 	switch msg := msg.(type) {
 	case tea.WindowSizeMsg:
-		m.width = msg.Width
-		m.height = msg.Height
-		m.header.width = msg.Width
-		m.footer.SetWidth(msg.Width)
-		mainViewHeight := msg.Height - m.header.height() - m.footer.height()
-		m.tracker.width = msg.Width
+		width := max(msg.Width, minWidth)
+		height := max(msg.Height, minHeight)
+
+		m.width = width
+		m.height = height
+		m.header.width = width
+		m.footer.width = width - 2
+		mainViewHeight := height - m.header.height() - m.footer.height()
+		m.tracker.width = width
 		m.tracker.height = mainViewHeight
-		m.sampler.width = msg.Width
+		m.sampler.width = width
 		m.sampler.height = mainViewHeight
 		m.sampler.table.SetHeight(mainViewHeight - 4) // account for border and padding
+
+		if m.waveform.sample != nil {
+			m.waveform = newWaveformModel(m.waveform.sample, width, height)
+		}
 
 	case tea.KeyMsg:
 		if m.activeView == showQuitConfirmation {

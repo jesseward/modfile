@@ -1,16 +1,13 @@
 package ui
 
 import (
-	"fmt"
 	"log"
-	"os"
 	"time"
 
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/lipgloss"
 	"github.com/jesseward/impulse/internal/player"
 	"github.com/jesseward/impulse/pkg/module"
-	"golang.org/x/term"
 )
 
 const (
@@ -27,18 +24,6 @@ var (
 )
 
 func New(m module.Module) {
-	// Get terminal dimensions
-	width, height, err := term.GetSize(int(os.Stdout.Fd()))
-	if err != nil {
-		log.Fatalf("Failed to get terminal size: %v", err)
-	}
-
-	// Check if terminal is too small
-	if width < minWidth || height < minHeight {
-		fmt.Printf("Terminal too small. Minimum size is %d a %d, but yours is %d a %d.\n", minWidth, minHeight, width, height)
-		return
-	}
-
 	stateUpdateChan := make(chan player.PlayerStateUpdate)
 	opts := player.DefaultPlayerOptions()
 	p := player.NewPlayer(m, func(format string, a ...interface{}) {}, stateUpdateChan, opts)
